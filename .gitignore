@@ -1,3 +1,10 @@
+block_stripe/checkpoints/*.checkpoint
+naive/checkpoints/*.checkpoint
+block_stripe/data/*.matrix
+naive/data/*.matrix
+block_stripe/data/*.vector
+naive/data/*.vector
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
