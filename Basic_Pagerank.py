@@ -25,7 +25,7 @@ THRESHOLD = 1e-8
 
 
 def calc_aim_block_index(item, max_index, block_num):
-    return item // (((max_index + 1) // block_num) + 1);
+    return item // (((max_index + 1) // block_num) + 1)
 
 
 def load_data():
@@ -86,7 +86,7 @@ def naive_pagerank(max_node_index, node_num, node_dict):
             for entry in link_matrix_stripe:
                 for destination in entry[2]:
                     r_newly[destination] += (1 - RANDOM_WALK_PROBABILITY) * r_old[entry[0]] / entry[1]
-        r_newly = normalize_list(r_newly)
+
 
         # make checkpoints
         if not round % SAVE_CHECKPOINT_INTERVAL:
@@ -98,6 +98,7 @@ def naive_pagerank(max_node_index, node_num, node_dict):
         # check if it comes to convergence
         if calc_2listdist(r_newly, r_old) < THRESHOLD:
             print("convergence at round", round)
+            r_newly = normalize_list(r_newly)
             return r_newly
         else:
             r_old = r_newly
@@ -124,9 +125,9 @@ def output_result_list(results):
                 print("write finish..")
                 return
 
-
-if __name__ == '__main__':
-    print("### Naive Version(without block-stripe) running.. ###")
-    Node_dict, Max_Node_Index, Node_Num = load_data()
-    r_new = naive_pagerank(Max_Node_Index, Node_Num, Node_dict)
-    output_result_list(r_new)
+#
+# if __name__ == '__main__':
+#     print("### Naive Version(without block-stripe) running.. ###")
+#     Node_dict, Max_Node_Index, Node_Num = load_data()
+#     r_new = naive_pagerank(Max_Node_Index, Node_Num, Node_dict)
+#     output_result_list(r_new)
