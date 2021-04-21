@@ -1,3 +1,7 @@
+"""
+Author: Michelle
+Date: 4/21/2021
+"""
 from Basic_Pagerank import *
 
 THRESHOLD = 1e-6
@@ -13,7 +17,7 @@ def initialize(Node_Num):
     return r_ret
 
 
-def matrix_multiple(Node_dict,Node_Num,r_old):
+def matrix_multiple(Node_Num,r_old):
     r_newly=[0]* Node_Num
     f_name = LINK_MATRIX_PREFIX + LINK_MATRIX_SUFFIX
     with open(f_name, "rb") as f:
@@ -37,7 +41,7 @@ def basic_pagerank(Node_Num, Node_dict):
     round = 0
     while True:
         # 矩阵乘法得到r_new
-        r_new = matrix_multiple(Node_dict,Node_Num,r_old)
+        r_new = matrix_multiple(Node_Num,r_old)
         # 标准化
         r_new = normalize_list2(r_new)
         # r_new*beta+（1-beta）/N
