@@ -4,20 +4,25 @@ THRESHOLD = 1e-6
 MAX_ROUND = 100
 
 
-def initialiaze(Node_Num):
+def normalize_list2(r_newly): #归一化方法不同
+    r_new = [i + (1 - float(sum(r_newly))) / float(Node_Num) for i in r_newly]
+    return r_new
+
+def initialize(Node_Num):
     r_ret = [1 / float(Node_Num)] * Node_Num
     return r_ret
 
 
-def matrix_multiple(Node_Num,r_old):
+def matrix_multiple(Node_dict,Node_Num,r_old):
     r_newly=[0]* Node_Num
     f_name = LINK_MATRIX_PREFIX + LINK_MATRIX_SUFFIX
     with open(f_name, "rb") as f:
         link_matrix_stripe = pkl.load(f)
         for entry in link_matrix_stripe:
             for destination in entry[2]:
-                r_newly[destination] += (1 - RANDOM_WALK_PROBABILITY) * r_old[entry[0]] / entry[1]
+                r_newly[destination] +=  r_old[entry[0]] / entry[1]
 
+    # print(sum(r_new))
     return r_newly
 
 
@@ -28,13 +33,13 @@ def random_walk(r, Node_Num):
 
 def basic_pagerank(Node_Num, Node_dict):
     # 初始化
-    r_old = initialiaze(Node_Num)
+    r_old = initialize(Node_Num)
     round = 0
     while True:
         # 矩阵乘法得到r_new
-        r_new = matrix_multiple(Node_Num,r_old)
+        r_new = matrix_multiple(Node_dict,Node_Num,r_old)
         # 标准化
-        r_new = normalize_list(r_new)
+        r_new = normalize_list2(r_new)
         # r_new*beta+（1-beta）/N
         r_new = random_walk(r_new, Node_Num)
         # 比较
@@ -51,6 +56,7 @@ def output_result(result):
     # print(sort_result)
     for key in sort_result:
         print(key,sort_result[key])
+
 
 if __name__ == '__main__':
     print("### Naive Version(without block-stripe) running.. ###")

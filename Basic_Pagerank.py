@@ -38,7 +38,8 @@ def load_data():
             max_nodenum = max(max_nodenum, max(fm, to))
             Link_Matrix[fm][1] += 1
             Link_Matrix[fm][2].append(to)
-            temp_dict[fm] = temp_dict[to] = 1
+            temp_dict[fm] =1
+            # temp_dict[to] = 1
     print('load data finish..')
 
     f_name = LINK_MATRIX_PREFIX + LINK_MATRIX_SUFFIX
