@@ -59,7 +59,7 @@ class IndexTransfer:
 
 
 def judge_block_similar(r_new, r_old):
-    return (np.square(r_new - r_old)).sum() < THRESHOLD * len(r_old)
+    return (np.abs(r_new - r_old)).sum() < THRESHOLD * len(r_old)
 
 
 def dump_vector(block_index, r, new=False):
@@ -111,10 +111,11 @@ def read_graph(node_num):
                 Link_Matrix[fm][1].append(to)
 
     print("load data finish")
-    return Link_Matrix, node_num
+    return dict(sorted(Link_Matrix.items(),key=lambda item:item[0])), node_num
 
 
 def dump_link_matrix(Link_Matrix, transfer):
+
     for i in range(0, BLOCK_NUM):
         Link_Matrix_List = {}
         for fm in Link_Matrix:
@@ -129,9 +130,10 @@ def dump_link_matrix(Link_Matrix, transfer):
 def load_data():
     Node_Num = -1
     Link_Matrix, Node_Num = read_graph(Node_Num)
+    Node_Num += 1      # 默认有index=0的点
     transfer = IndexTransfer(Node_Num)
     dump_link_matrix(Link_Matrix, transfer)
-    Node_Num += 1  # 默认有index=0的点
+
     return transfer
 
 
@@ -155,12 +157,15 @@ def matrix_block_multiple(matrix_stripe, block_index, transfer):  # stripe和v�
     r_old = load_vector(block_index)
     r_new = np.zeros(transfer.num_in_group)
     # 相乘
-    for i in matrix_stripe:  # 遍历转移矩阵stripe
+    for i in dict(filter(
+            lambda x: x[0] >= block_index * transfer.num_in_group and x[0] < (block_index + 1) * transfer.num_in_group,
+            matrix_stripe.items())):  # 遍历转移矩阵stripe
         if i >= (block_index + 1) * transfer.num_in_group:
             break
         for to in matrix_stripe[i][1]:
             to_block_index = transfer.dest2stripedest(to)
-            r_new[to_block_index] += r_old[to_block_index] / matrix_stripe[i][0]
+            fm_block_index=transfer.dest2stripedest(i)
+            r_new[to_block_index] += r_old[fm_block_index] / matrix_stripe[i][0]
     return r_new
 
 
@@ -189,18 +194,18 @@ def initialize(transfer):
         dump_vector(block_index, r)
 
 
-def output_result_list():
+def output_result_list(transfer):
     # 挑出每个文件的前100个
     print("start calculating final rank")
     results = {}
     for i in range(0, BLOCK_NUM):
         result = load_vector(i)[:100]
-        sort_result = dict(zip(np.argsort(-result)[:PRINT_NUM + 1], sorted(result, reverse=True)[:PRINT_NUM + 1]))
+        sort_result = dict(zip(np.argsort(-result)[:PRINT_NUM + 1]+i*transfer.num_in_group, sorted(result, reverse=True)[:PRINT_NUM + 1]))
         results.update(sort_result)
     results = dict(sorted(results.items(), key=lambda kv: (kv[1], kv[0]), reverse=True))
     print("start ouput")
     for i, key in enumerate(results):
-        print(key, ' ', results[key])
+        print(key, '\t', results[key])
         if i == 99:
             break
 
@@ -208,10 +213,10 @@ def output_result_list():
 def block_stripe_pagerank(transfer):
     print("basic pangerank")
     initialize(transfer)
-    r_random = np.ones(transfer.num_in_group) / transfer.node_num
+    r_random = np.ones(transfer.num_in_group) / transfer.node_num*RANDOM_WALK_PROBABILITY
     print("initialize finish")
-    flag = 1
-    while flag:  # 最后一组个数
+    flag = 0
+    while not flag:  # 最后一组个数
         vector_sum = matrix_multiple(transfer)  # 函数要实现收敛判断
         flag = normalize_list_randomwalk(vector_sum, r_random)
 
@@ -222,7 +227,7 @@ if __name__ == '__main__':
     print("### Block-Stripe Version running.. ###")
     transfer = load_data()
     block_stripe_pagerank(transfer)
-    output_result_list()
+    output_result_list(transfer)
     # print(Max_Node_Index, Node_Num)
     # transfer = IndexTransfer(BLOCK_NUM, Max_Node_Index, Node_Num)
     # r_new = block_stripe_pagerank(Max_Node_Index, Node_Num, Node_dict, transfer)
