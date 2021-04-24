@@ -5,6 +5,7 @@ Date: 4/21/2021
 # from Block_Stripe_Pagerank import *
 import pickle as pkl
 import numpy as np
+import copy
 
 FMTO_GRAPH_PATH = ".\\WikiData.txt"
 LINK_MATRIX_PREFIX = ".\\block_stripe\\data\\Link_Matrix_"
@@ -22,9 +23,11 @@ SAVE_CHECKPOINT_INTERVAL = 10
 RANDOM_WALK_PROBABILITY = 0.15
 BLOCK_NUM = 10  # identify the num of block-stripes
 MAX_NODE_INDEX = 8297  # max node index process before
-THRESHOLD = 1e-8
+THRESHOLD = 1e-6
 
 Node_Num = -1
+
+R = [0] * 8298
 
 
 class IndexTransfer:
@@ -62,13 +65,19 @@ def judge_block_similar(r_new, r_old):
     return (np.abs(r_new - r_old)).sum() < THRESHOLD * len(r_old)
 
 
-def dump_vector(block_index, r, new=False):
+def dump_vector(transfer, block_index, r_, new=False):
+    if block_index == BLOCK_NUM-1:
+        r_ = r_[:transfer.num_in_last_group]
     if new == False:
         f_name = R_VECTOR_PREDIX + str(block_index) + R_VECTOR_SUFFIX
+        for i in range(0, len(r_)):
+            #print(block_index, ' ', i, '  ', block_index * 830 + i, ' ', new,' ',len(r_))
+            R[block_index * 830 + i] = r_[i]
+
     else:
         f_name = R_VECTOR_PREDIX + str(block_index) + NEW_VECTOR_PREFIX + R_VECTOR_SUFFIX
     with open(f_name, "wb") as wf:
-        pkl.dump(r, wf)
+        pkl.dump(r_, wf)
 
 
 def load_vector(block_index, new=False):
@@ -111,11 +120,10 @@ def read_graph(node_num):
                 Link_Matrix[fm][1].append(to)
 
     print("load data finish")
-    return dict(sorted(Link_Matrix.items(),key=lambda item:item[0])), node_num
+    return dict(sorted(Link_Matrix.items(), key=lambda item: item[0])), node_num
 
 
 def dump_link_matrix(Link_Matrix, transfer):
-
     for i in range(0, BLOCK_NUM):
         Link_Matrix_List = {}
         for fm in Link_Matrix:
@@ -130,14 +138,14 @@ def dump_link_matrix(Link_Matrix, transfer):
 def load_data():
     Node_Num = -1
     Link_Matrix, Node_Num = read_graph(Node_Num)
-    Node_Num += 1      # 默认有index=0的点
+    Node_Num += 1  # 默认有index=0的点
     transfer = IndexTransfer(Node_Num)
     dump_link_matrix(Link_Matrix, transfer)
 
     return transfer
 
 
-def normalize_list_randomwalk(vector_sum, r_random):  # 按比例
+def normalize_list_randomwalk(vector_sum, r_random, transfer):  # 按比例
     flag = 1
     for block_index in range(0, BLOCK_NUM):
         r_new = load_vector(block_index, True)
@@ -145,12 +153,22 @@ def normalize_list_randomwalk(vector_sum, r_random):  # 按比例
         r_old = load_vector(block_index)
         if flag == 1:
             flag = judge_block_similar(r_new, r_old)
-        dump_vector(block_index, r_new)
+        if block_index < BLOCK_NUM:
+            dump_vector(transfer, block_index, r_new)
     return flag
 
 
-def normalize_list_randomwalk2(sum):
-    pass
+def normalize_list_randomwalk2(vector_sum, r_random, transfer):
+    flag=1
+    for block_index in range(0, BLOCK_NUM):
+        r_new = load_vector(block_index, True)
+        r_new = (1 - RANDOM_WALK_PROBABILITY) * (r_new +(1-vector_sum)/transfer.node_num)  + r_random[:len(r_new)]
+        r_old = load_vector(block_index)
+        if flag == 1:
+            flag = judge_block_similar(r_new, r_old)
+        if block_index < BLOCK_NUM:
+            dump_vector(transfer, block_index, r_new)
+    return flag
 
 
 def matrix_block_multiple(matrix_stripe, block_index, transfer):  # stripe和v的一块乘
@@ -164,7 +182,7 @@ def matrix_block_multiple(matrix_stripe, block_index, transfer):  # stripe和v�
             break
         for to in matrix_stripe[i][1]:
             to_block_index = transfer.dest2stripedest(to)
-            fm_block_index=transfer.dest2stripedest(i)
+            fm_block_index = transfer.dest2stripedest(i)
             r_new[to_block_index] += r_old[fm_block_index] / matrix_stripe[i][0]
     return r_new
 
@@ -175,7 +193,7 @@ def matrix_stripe_multiple(stripe_index, transfer):  # stripe和v乘
     for block_index in range(0, BLOCK_NUM):
         r_new = r_new + matrix_block_multiple(matrix_stripe, block_index, transfer)
 
-    dump_vector(stripe_index, r_new, new=True)
+    dump_vector(transfer, stripe_index, r_new, new=True)
     return r_new.sum()
 
 
@@ -191,7 +209,7 @@ def initialize(transfer):
         return
     r = np.ones(transfer.num_in_group) / transfer.node_num
     for block_index in range(0, BLOCK_NUM):
-        dump_vector(block_index, r)
+        dump_vector(transfer, block_index, r)
 
 
 def output_result_list(transfer):
@@ -199,8 +217,9 @@ def output_result_list(transfer):
     print("start calculating final rank")
     results = {}
     for i in range(0, BLOCK_NUM):
-        result = load_vector(i)[:100]
-        sort_result = dict(zip(np.argsort(-result)[:PRINT_NUM + 1]+i*transfer.num_in_group, sorted(result, reverse=True)[:PRINT_NUM + 1]))
+        result = load_vector(i)
+        sort_result = dict(zip(np.argsort(-result)[:PRINT_NUM] + i * transfer.num_in_group,
+                               sorted(result, reverse=True)[:PRINT_NUM]))
         results.update(sort_result)
     results = dict(sorted(results.items(), key=lambda kv: (kv[1], kv[0]), reverse=True))
     print("start ouput")
@@ -213,12 +232,15 @@ def output_result_list(transfer):
 def block_stripe_pagerank(transfer):
     print("basic pangerank")
     initialize(transfer)
-    r_random = np.ones(transfer.num_in_group) / transfer.node_num*RANDOM_WALK_PROBABILITY
+    r_random = np.ones(transfer.num_in_group) / transfer.node_num * RANDOM_WALK_PROBABILITY
     print("initialize finish")
     flag = 0
+    round = 0
     while not flag:  # 最后一组个数
         vector_sum = matrix_multiple(transfer)  # 函数要实现收敛判断
-        flag = normalize_list_randomwalk(vector_sum, r_random)
+        flag = normalize_list_randomwalk2(vector_sum, r_random, transfer)
+        round += 1
+        print(round,' ',R[4037])
 
     print("multiple finish")
 
