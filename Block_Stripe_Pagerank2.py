@@ -66,12 +66,12 @@ def judge_block_similar(r_new, r_old):
 
 
 def dump_vector(transfer, block_index, r_, new=False):
-    if block_index == BLOCK_NUM-1:
+    if block_index == BLOCK_NUM - 1:
         r_ = r_[:transfer.num_in_last_group]
     if new == False:
         f_name = R_VECTOR_PREDIX + str(block_index) + R_VECTOR_SUFFIX
         for i in range(0, len(r_)):
-            #print(block_index, ' ', i, '  ', block_index * 830 + i, ' ', new,' ',len(r_))
+            # print(block_index, ' ', i, '  ', block_index * 830 + i, ' ', new,' ',len(r_))
             R[block_index * 830 + i] = r_[i]
 
     else:
@@ -159,10 +159,10 @@ def normalize_list_randomwalk(vector_sum, r_random, transfer):  # 按比例
 
 
 def normalize_list_randomwalk2(vector_sum, r_random, transfer):
-    flag=1
+    flag = 1
     for block_index in range(0, BLOCK_NUM):
         r_new = load_vector(block_index, True)
-        r_new = (1 - RANDOM_WALK_PROBABILITY) * (r_new +(1-vector_sum)/transfer.node_num)  + r_random[:len(r_new)]
+        r_new = (1 - RANDOM_WALK_PROBABILITY) * (r_new + (1 - vector_sum) / transfer.node_num) + r_random[:len(r_new)]
         r_old = load_vector(block_index)
         if flag == 1:
             flag = judge_block_similar(r_new, r_old)
@@ -223,10 +223,11 @@ def output_result_list(transfer):
         results.update(sort_result)
     results = dict(sorted(results.items(), key=lambda kv: (kv[1], kv[0]), reverse=True))
     print("start ouput")
-    for i, key in enumerate(results):
-        print(key, '\t', results[key])
-        if i == 99:
-            break
+    with open(RESULT_OUTPUT_PATH, "w") as f:
+        for i, key in enumerate(results):
+            f.write(str(key)+ '\t'+str(results[key])+'\n')
+            if i == 99:
+                break
 
 
 def block_stripe_pagerank(transfer):
@@ -240,7 +241,6 @@ def block_stripe_pagerank(transfer):
         vector_sum = matrix_multiple(transfer)  # 函数要实现收敛判断
         flag = normalize_list_randomwalk2(vector_sum, r_random, transfer)
         round += 1
-        print(round,' ',R[4037])
 
     print("multiple finish")
 

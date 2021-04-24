@@ -58,8 +58,9 @@ def output_result(result):
     result=np.array(result)
     sort_result=dict(zip(np.argsort(-result)[:PRINT_NUM+1], sorted(result, reverse=True)[:PRINT_NUM+1]))
     # print(sort_result)
-    for key in sort_result:
-        print(key,sort_result[key])
+    with open(RESULT_OUTPUT_PATH, "w") as f:
+        for key in sort_result:
+            f.write(str(key)+' '+str(sort_result[key])+'\n')
 
 
 if __name__ == '__main__':
