@@ -56,7 +56,7 @@ def basic_pagerank(Node_Num, Node_dict):
 
 def output_result(result):
     result=np.array(result)
-    sort_result=dict(zip(np.argsort(-result)[:PRINT_NUM+1], sorted(result, reverse=True)[:PRINT_NUM+1]))
+    sort_result=dict(zip(np.argsort(-result)[:PRINT_NUM], sorted(result, reverse=True)[:PRINT_NUM+1]))
     # print(sort_result)
     with open(RESULT_OUTPUT_PATH, "w") as f:
         for key in sort_result:

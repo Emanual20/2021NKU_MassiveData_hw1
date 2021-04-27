@@ -27,7 +27,8 @@ THRESHOLD = 1e-6
 
 Node_Num = -1
 
-R = [0] * 8298
+# R = [0] * 8298
+# mindex = 0
 
 
 class IndexTransfer:
@@ -70,23 +71,24 @@ def dump_vector(transfer, block_index, r_, new=False):
         r_ = r_[:transfer.num_in_last_group]
     if new == False:
         f_name = R_VECTOR_PREDIX + str(block_index) + R_VECTOR_SUFFIX
-        for i in range(0, len(r_)):
-            # print(block_index, ' ', i, '  ', block_index * 830 + i, ' ', new,' ',len(r_))
-            R[block_index * 830 + i] = r_[i]
-
     else:
         f_name = R_VECTOR_PREDIX + str(block_index) + NEW_VECTOR_PREFIX + R_VECTOR_SUFFIX
     with open(f_name, "wb") as wf:
         pkl.dump(r_, wf)
+    # for i in range(0, len(r_)):
+    #     # print(block_index, ' ', i, '  ', block_index * 830 + i, ' ', new,' ',len(r_))
+    #     R[block_index * 830 + i] = r_[i]
 
 
 def load_vector(block_index, new=False):
     if new == False:
         f_name = R_VECTOR_PREDIX + str(block_index) + R_VECTOR_SUFFIX
+
     else:
         f_name = R_VECTOR_PREDIX + str(block_index) + NEW_VECTOR_PREFIX + R_VECTOR_SUFFIX
     with open(f_name, "rb") as f:
         r = pkl.load(f)
+
     return r
 
 
@@ -171,9 +173,9 @@ def normalize_list_randomwalk2(vector_sum, r_random, transfer):
     return flag
 
 
-def matrix_block_multiple(matrix_stripe, block_index, transfer):  # stripe和v的一块乘
+def matrix_block_multiple(matrix_stripe, block_index, transfer, r_new):  # stripe和v的一块乘
     r_old = load_vector(block_index)
-    r_new = np.zeros(transfer.num_in_group)
+
     # 相乘
     for i in dict(filter(
             lambda x: x[0] >= block_index * transfer.num_in_group and x[0] < (block_index + 1) * transfer.num_in_group,
@@ -184,6 +186,12 @@ def matrix_block_multiple(matrix_stripe, block_index, transfer):  # stripe和v�
             to_block_index = transfer.dest2stripedest(to)
             fm_block_index = transfer.dest2stripedest(i)
             r_new[to_block_index] += r_old[fm_block_index] / matrix_stripe[i][0]
+            # if to == 6634:
+            #     global mindex
+            #     print(mindex, '\t', r_new[to_block_index], '\t', i, '\t', r_old[fm_block_index], '\t',
+            #           matrix_stripe[i][0])
+            #     mindex += 1
+
     return r_new
 
 
@@ -191,7 +199,7 @@ def matrix_stripe_multiple(stripe_index, transfer):  # stripe和v乘
     matrix_stripe = load_matrix_stripe(stripe_index)
     r_new = np.zeros(transfer.num_in_group)
     for block_index in range(0, BLOCK_NUM):
-        r_new = r_new + matrix_block_multiple(matrix_stripe, block_index, transfer)
+        r_new = matrix_block_multiple(matrix_stripe, block_index, transfer, r_new)
 
     dump_vector(transfer, stripe_index, r_new, new=True)
     return r_new.sum()
@@ -229,6 +237,11 @@ def output_result_list(transfer):
             if i == 99:
                 break
 
+    # for i, key in enumerate(results):
+    #     if i ==PRINT_NUM:
+    #         break
+    #     print(str(key) + '\t' + str(results[key]))
+
 
 def block_stripe_pagerank(transfer):
     print("basic pangerank")
@@ -238,6 +251,7 @@ def block_stripe_pagerank(transfer):
     flag = 0
     round = 0
     while not flag:  # 最后一组个数
+        # print(round, '\t', R[6634])
         vector_sum = matrix_multiple(transfer)  # 函数要实现收敛判断
         flag = normalize_list_randomwalk2(vector_sum, r_random, transfer)
         round += 1
