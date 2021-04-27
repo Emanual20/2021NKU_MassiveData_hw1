@@ -1,11 +1,11 @@
 """
-Author: Michelle
+Author: Sakura, Michelle
 Date: 4/21/2021
 """
-# from Block_Stripe_Pagerank import *
+
 import pickle as pkl
 import numpy as np
-import copy
+
 
 FMTO_GRAPH_PATH = ".\\WikiData.txt"
 LINK_MATRIX_PREFIX = ".\\block_stripe\\data\\Link_Matrix_"
@@ -264,7 +264,3 @@ if __name__ == '__main__':
     transfer = load_data()
     block_stripe_pagerank(transfer)
     output_result_list(transfer)
-    # print(Max_Node_Index, Node_Num)
-    # transfer = IndexTransfer(BLOCK_NUM, Max_Node_Index, Node_Num)
-    # r_new = block_stripe_pagerank(Max_Node_Index, Node_Num, Node_dict, transfer)
-    # output_result_list(r_new)
