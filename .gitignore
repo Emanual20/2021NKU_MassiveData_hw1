@@ -4,7 +4,7 @@ block_stripe/data/*.matrix
 naive/data/*.matrix
 block_stripe/data/*.vector
 naive/data/*.vector
-*.txt
+WikiData.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
