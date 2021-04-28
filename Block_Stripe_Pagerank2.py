@@ -23,7 +23,7 @@ SAVE_CHECKPOINT_INTERVAL = 10
 RANDOM_WALK_PROBABILITY = 0.15
 BLOCK_NUM = 10  # identify the num of block-stripes
 MAX_NODE_INDEX = 8297  # max node index process before
-THRESHOLD = 1e-6
+THRESHOLD = 1e-8
 
 Node_Num = -1
 
@@ -186,12 +186,6 @@ def matrix_block_multiple(matrix_stripe, block_index, transfer, r_new):  # strip
             to_block_index = transfer.dest2stripedest(to)
             fm_block_index = transfer.dest2stripedest(i)
             r_new[to_block_index] += r_old[fm_block_index] / matrix_stripe[i][0]
-            # if to == 6634:
-            #     global mindex
-            #     print(mindex, '\t', r_new[to_block_index], '\t', i, '\t', r_old[fm_block_index], '\t',
-            #           matrix_stripe[i][0])
-            #     mindex += 1
-
     return r_new
 
 
@@ -246,7 +240,8 @@ def output_result_list(transfer):
 def block_stripe_pagerank(transfer):
     print("basic pangerank")
     initialize(transfer)
-    r_random = np.ones(transfer.num_in_group) / transfer.node_num * RANDOM_WALK_PROBABILITY
+    r_random = np.ones(transfer.num_in_group) / \
+               transfer.node_num * RANDOM_WALK_PROBABILITY
     print("initialize finish")
     flag = 0
     round = 0

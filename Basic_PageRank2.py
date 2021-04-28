@@ -21,7 +21,7 @@ RANDOM_WALK_PROBABILITY = 0.15
 BLOCK_NUM = 10  # identify the num of block-stripes
 MAX_NODE_INDEX = 8297  # max node index process before
 
-THRESHOLD = 1e-6
+THRESHOLD = 1e-8
 MAX_ROUND = 100
 
 
